@@ -57,5 +57,6 @@ bot.load_next_step_handlers()
 bot.polling(none_stop=True)
 
 
-if __name__**'__main__':
+
+if __name__**'__main__': # Убрать для PythonAnyWhere
     bot.polling(none_stop=True)
