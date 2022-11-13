@@ -1,7 +1,6 @@
 import telebot
 import mysql.connector
 
-
 bot = telebot.TeleBot('5796781509:AAH6nFu_T5zdRV7DEFg4BzkTHyktZ7N30Bw')
 
 mydb = mysql.connector.connect(
