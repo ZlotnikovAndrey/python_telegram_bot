@@ -3,14 +3,23 @@ import mysql.connector
 
 bot = telebot.TeleBot('5796781509:AAH6nFu_T5zdRV7DEFg4BzkTHyktZ7N30Bw')
 
-mydb = mysql.connector.connect(
+db = mysql.connector.connect(
     host="Andreybandit.mysql.pythonanywhere-services.com",
     user="Andreybandit",
     passwd="Tokoprovod",
-    port="3306"
+    port="3306",
+    database="Andreybandit$Tokoprovod"
     )
 
-print(mydb)
+cursor = db.cursor()
+
+# показат существующие базы данных
+# cursor.execute("SHOW DATABASES")
+#
+# for x in cursor:
+#     print(x)
+
+cursor.execute("CREATE TABLE details(drawing VARCHAR(50) NOT NULL, size VARCHAR(50), note VARCHAR(255)")
 
 user_data = {}
 
