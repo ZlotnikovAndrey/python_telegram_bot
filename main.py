@@ -1,96 +1,94 @@
 import telebot
 import mysql.connector
+from telebot import types # для указание типов
 
 bot = telebot.TeleBot('')
 
-db = mysql.connector.connect(
-    host="Andreybandit.mysql.pythonanywhere-services.com",
-    user="Andreybandit",
-    passwd="Tokoprovod",
-    port="3306",
-    database="Andreybandit$Tokoprovod"
-    )
+name = '';                 # переменная для поиска развертки по чертежу детали
+shell_thickness = 0;       # переменная для поиска развертки обечайки
+shell_diameter = 0;        # переменная для поиска развертки обечайки
+half_shell_thickness = 0;  # переменная для поиска развертки полуоболочки
+half_shell_diameter = 0;   # переменная для поиска развертки полуоболочки
+straight_part = 0;         # переменная для поиска развертки полуоболочки
 
-cursor = db.cursor()
+@bot.message_handler(commands=['start']) # стартовая функция с тремя кнопками функций бота
+def start(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    btn1 = types.KeyboardButton("Развертку обечайки")
+    btn2 = types.KeyboardButton("Развертку полуоболочки")
+    btn3 = types.KeyboardButton("Развертку детали по чертежу")
+    markup.add(btn1, btn2, btn3)
+    bot.send_message(message.chat.id, "Привет, Я  бот ЦТК, могу помочь рассчитать развертку обечайки или подсказать развертку детали. Выберете что вам нужно ", reply_markup=markup)
 
+@bot.message_handler(content_types=['text']) # перенаправление на функции, после нажатия определенной кнопки. И получение начальных данных
+def func(message):
+    if(message.text == "Развертку детали по чертежу"):
+        name = bot.send_message(message.chat.id,"Введите чертеж детали")
+        bot.register_next_step_handler(name, get_drawing)
+    elif(message.text == "Развертку обечайки"):
+        shell_diameter = bot.send_message(message.chat.id,"Введите <b>ВНЕШНИЙ</b> диаметр",parse_mode='html')
+        bot.register_next_step_handler(shell_diameter, get_thickness)
+    elif(message.text == "Развертку полуоболочки"):
+        half_shell_diameter = bot.send_message(message.chat.id,"Введите <b>ВНУТРЕННИЙ</b> диаметр",parse_mode='html')
+        bot.register_next_step_handler(half_shell_diameter, get_half_thickness)
 
-sql = "SELECT size FROM details WHERE drawing = %s"
-val = ("8ТП.310.017", )
-cursor.execute(sql,val)
+def get_drawing(message): #функция нахождения данных в базе данных MySQL
+    try:
+        global name;
+        name = message.text;
 
-size = cursor.fetchall()
-print(size)
+        db = mysql.connector.connect(
+            host="Andreybandit.mysql.pythonanywhere-services.com",
+            user="Andreybandit",
+            passwd="Tokoprovod",
+            port="3306",
+            database="Andreybandit$Tokoprovod"
+            )
+        cursor = db.cursor()
 
-# показат существующие базы данных
-# cursor.execute("SHOW DATABASES")
-#
-# for x in cursor:
-#     print(x)
+        sql = "SELECT size FROM details WHERE drawing = %s"
+        val = (name, )
+        cursor.execute(sql,val)
+        size = cursor.fetchall()
+        cursor.close()
+        bot.send_message(message.from_user.id, size);
+    except Exception:
+        bot.send_message(message.from_user.id, '<b>Данная деталь не найдена</b>, убедитесь что чертеж детали указан верно, пример <b> 8ТП.000.001-001</b>', parse_mode='html');
 
-# cursor.execute("CREATE TABLE details(drawing VARCHAR(50) UNIQUE, size VARCHAR(50), note VARCHAR(255))")
+def get_thickness(message):            # запрос у пользователя данных о толщине стенки оболочки 
+    global shell_diameter;
+    shell_diameter = message.text
+    shell_thickness = bot.send_message(message.chat.id,"Введите толщину стенки")
+    bot.register_next_step_handler(shell_thickness, scope_shell)
 
-# cursor.execute("INSERT INTO details(drawing, size, note) values('test','plazma','test')")
+def scope_shell(message):             # расчет развертки обечайки. Вывод результата или ошибки
+    try:
+        shell_thickness = message.text
+        scope_size = ( float(shell_diameter) - float(shell_thickness) ) * 3.14
+        bot.send_message(message.from_user.id,scope_size);
+    except Exception:
+        bot.send_message(message.from_user.id, '<b>убедитесь что вводили цифры</b>', parse_mode='html');
 
-# cursor.execute("SELECT * FROM details")
+def get_half_thickness(message): # запрос у пользователя данных о толщине стенки полуоболочки 
+    global half_shell_diameter;
+    half_shell_diameter = message.text
+    half_shell_thickness = bot.send_message(message.chat.id,"Введите толщину стенки")
+    bot.register_next_step_handler(half_shell_thickness, get_straight_part)
 
-# cursor.execute("DROP TABLE details")
+def get_straight_part(message):        # запрос у пользователя данных прямого участка полуоболочки 
+    global half_shell_thickness;
+    half_shell_thickness = message.text
+    straight_part = bot.send_message(message.chat.id,"Введите длину прямого участка")
+    bot.register_next_step_handler(straight_part, scope_half_shell)
 
-# print(mn)
-# cursor.execute("SHOW TABLES")
-
-# for x in cursor:
-#     print(x)
-
-# sql = "INSERT INTO details(drawing, size, note) VALUES(%s, %s, %s)"
-# val = [
-#     ]
-# cursor.executemany(sql, val)
-# db.commit()
-
-# print(cursor.rowcount, "Запись добавлена")
-
-
-
-# user_data = {}
-
-# class User:
-#     def __init__(self,firt_name):
-#         self.firt_name = firt_name
-#         self.last_name = ''
-
-# @bot.message_handler(commands=['start', 'help'])
-# def send_welcome(message):
-#     msg = bot.send_message(message.chat.id,"Введите имя")
-#     bot.register_next_step_handler(msg, process_firstname_step)
-
-# def process_firstname_step(message):
-#     try:
-#         user_id = message.from_user.id
-#         user_data[user_id] = User(message.text)
-
-#         msg = bot.send_message(message.chat.id,"Введите фамилию")
-#         bot.register_next_step_handler(msg, process_lastname_step)
-#     except Exception as e:
-#         bot.reply_to(message, 'oooops')
-
-# def process_lastname_step(message):
-#     try:
-#         user_id = message.from_user.id
-#         user = user_data[user_id]
-#         user.last_name = message.text
-
-#         bot.send_message(message.chat.id,"Вы успешно зарегестрированны")
-#     except Exception as e:
-#         bot.reply_to(message, 'oooops')
-
-# Enable saving next step handlers to file "./.handlers-saves/step.save".
-# Delay=2 means that after any change in next step handlers (e.g. calling register_next_step_handler())
-# saving will hapen after delay 2 seconds.
-# bot.enable_save_next_step_handlers(delay=2)
-
-# Load next_step_handlers from save file (default "./.handlers-saves/step.save")
-# WARNING It will work only if enable_save_next_step_handlers was called!
-# bot.load_next_step_handlers()
+def scope_half_shell(message):  # расчет развертки полуоболочки. Вывод результата или ошибки
+    try:
+        global straight_part;
+        straight_part = message.text
+        scope_half_shell = (((int(half_shell_diameter) + int(half_shell_thickness)) * 3.14) / 2) + (int(straight_part) * 2)
+        bot.send_message(message.from_user.id, scope_half_shell);
+    except Exception:
+        bot.send_message(message.from_user.id, '<b>убедитесь что вводили цифры</b>', parse_mode='html');
 
 
 bot.polling(none_stop=True)
