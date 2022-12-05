@@ -4,7 +4,6 @@
 Запуск кода будет производится через сайт PythonAnyWhere
 ## Телеграмм бот имеет три функци:
 1. Расчет развертки обечайки 
-<image src="(https://drive.google.com/file/d/11R11oA05VWnk4nfGk1gFMEkpn1wZ3we-/view?usp=share_link)" alt="Текст с описанием картинки">
-
+<image src="https://drive.google.com/file/d/11R11oA05VWnk4nfGk1gFMEkpn1wZ3we-/view?usp=share_link" alt="ER- диаграмма">
 2. Расчет развертки полуоболочки
 3. Поиск развертки детали по чертежу( запрос к базе данных MySQL, 
